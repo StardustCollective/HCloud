@@ -243,7 +243,7 @@ case "$runChoice" in
     tempFile=$(mktemp /tmp/HCloud.XXXXXX.py)
     log "Downloading HCloud.py to temporary file..."
     
-    curl -L -o "$tempFile" "https://raw.githubusercontent.com/Proph151Music/HCloud/main/HCloud.py" >> "$LOGFILE" 2>&1
+    curl -L -o "$tempFile" "https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py" >> "$LOGFILE" 2>&1
     if [ $? -ne 0 ] || [ ! -f "$tempFile" ]; then
       echo "${RED}Failed to download HCloud.py.${RESET}"
       log "Failed to download HCloud.py"
