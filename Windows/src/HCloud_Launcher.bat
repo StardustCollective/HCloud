@@ -87,7 +87,7 @@ if exist "%LOCAL_ENV%\python313._pth" (
 )
 
 set "TCL_ZIP_PATH=%SCRIPT_DIR%tcl.zip"
-set "TCL_GITHUB_URL=https://github.com/Proph151Music/HCloud/raw/main/Windows/tcl.zip"
+set "TCL_GITHUB_URL=https://github.com/StardustCollective/HCloud/raw/main/Windows/tcl.zip"
 if not exist "%TCL_ZIP_PATH%" (
     call :log Tcl/Tk archive not found locally. Downloading from GitHub...
     powershell -NoProfile -Command "Invoke-WebRequest -Uri '!TCL_GITHUB_URL!' -OutFile '!TCL_ZIP_PATH!'" >> "%LOGFILE%" 2>&1
@@ -151,7 +151,7 @@ if errorlevel 1 (
 
 :check_and_run_HCloud
 SET "HCLOUD_FILE=HCloud.py"
-SET "DOWNLOAD_URL=https://raw.githubusercontent.com/Proph151Music/HCloud/main/HCloud.py"
+SET "DOWNLOAD_URL=https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py"
 
 echo %BOLD%%GREEN%==========================================================================%RESET%
 echo %BOLD%%GREEN%             Welcome to the HCloud Graphical User Interface%RESET%
