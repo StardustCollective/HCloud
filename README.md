@@ -1,4 +1,4 @@
-# HCloud# HCloud - Hetzner Cloud Management GUI
+# HCloud - Hetzner Cloud Management GUI
 
 This tool is currently in beta!  
 If you use it, please report any issues to `@Proph151Music`.  
