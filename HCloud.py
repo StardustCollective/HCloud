@@ -400,7 +400,6 @@ def save_server_info(server_name, server_ip, ssh_key_path, username, network):
         os.makedirs(user_ssh_dir, exist_ok=True)
         destination_path = os.path.join(user_ssh_dir, f"{server_name}_ssh_config.txt")
 
-        # Remove the destination file if it exists
         if os.path.exists(destination_path):
             os.remove(destination_path)
 
@@ -408,17 +407,8 @@ def save_server_info(server_name, server_ip, ssh_key_path, username, network):
             # Attempt to create a hard link
             os.link(ssh_config_file_path, destination_path)
         except Exception as e:
-            # If hard link fails (e.g., on some Windows setups), fallback to copying the file
             shutil.copy2(ssh_config_file_path, destination_path)
-
-    # Chreate an importable termius.csv (But no ssh is imorted)
-    # csv_file_path = os.path.join(servers_dir, f"{server_name}_termius.csv")
-    # with open(csv_file_path, 'w', newline='') as csvfile:
-    #     writer = csv.writer(csvfile)
-    #     writer.writerow(["Groups", "Label", "Tags", "Hostname/IP", "Protocol", "Port"])
-    #     writer.writerow(["Nodes/DAG", server_name, network, server_ip, "ssh", "22"])
     
-    # Return the path to the SSH config file
     return ssh_config_file_path
 
 def get_firewall_details(api_key, firewall_id):
@@ -652,7 +642,6 @@ def create_new_firewall_with_defaults(api_key, firewall_name):
         'rules': default_rules
     }
 
-    # Create the new firewall
     response = requests.post('https://api.hetzner.cloud/v1/firewalls', headers=headers, json=payload)
 
     if response.status_code in [200, 201]:
@@ -719,61 +708,109 @@ def update_firewall_dropdown(api_key, firewall_dropdown, selected_firewall_var):
         firewall_dropdown.set('') 
 
 def create_edit_firewall_window(api_key, firewall_details, firewall_dropdown):
-    edit_window = tk.Toplevel()    
+    edit_window = tk.Toplevel()
     window_title = "Edit Firewall" if firewall_details.get('name') else "New Firewall"
     edit_window.title(window_title)
+    edit_window.geometry("600x500")
+    edit_window.configure(bg="#333333")
+    edit_window.option_add("*Font", ("Helvetica", 9))
     
-    edit_window.geometry("600x400")
+    style = ttk.Style()
+    style.theme_use("clam")
+    style.configure("DarkRed.TButton",
+                    foreground="white",
+                    background="#8B0000",
+                    font=("Helvetica", 9))
+    style.map("DarkRed.TButton",
+            background=[("active", "#000000"), ("!active", "#8B0000")])
 
-    tk.Label(edit_window, text="Firewall Name:").pack()
-    name_entry = tk.Entry(edit_window)
+    container = tk.Frame(edit_window, bg="#333333")
+    container.pack(expand=True, fill="both")
+    
+    tk.Label(container, text="Firewall Name:", bg="#333333", fg="white", font=("Helvetica", 9))\
+        .pack(pady=(10, 5))
+    name_entry = tk.Entry(container, width=30, bg="white", fg="black", font=("Helvetica", 9))
     name_entry.insert(0, firewall_details.get('name', firewall_dropdown.get()))
-    name_entry.pack()
-
-    global rules_frame
-    rules_frame = tk.Frame(edit_window)
-    rules_frame.pack()
-
-    header_row = tk.Frame(rules_frame)
-    header_row.pack(fill='x', padx=25, pady=2)
-    tk.Label(header_row, text="Add Details", width=15, anchor='w').pack(side=tk.LEFT)
-    tk.Label(header_row, text="Protocol", width=10, anchor='w').pack(side=tk.LEFT)
-    tk.Label(header_row, text="Port Range", width=15, anchor='w').pack(side=tk.LEFT)
-
+    name_entry.pack(pady=(0, 10))
+    
+    rules_container = tk.Frame(container, bg="#333333")
+    rules_container.pack(expand=True, fill="both", padx=10, pady=10)
+    
+    rules_canvas = tk.Canvas(rules_container, bg="#333333", highlightthickness=0)
+    rules_canvas.pack(side=tk.LEFT, fill="both", expand=True)
+    
+    v_scroll = tk.Scrollbar(rules_container, orient="vertical", command=rules_canvas.yview)
+    v_scroll.pack(side=tk.RIGHT, fill="y")
+    rules_canvas.configure(yscrollcommand=v_scroll.set)
+    
+    rules_frame = tk.Frame(rules_canvas, bg="#333333")
+    rules_canvas.create_window((0, 0), window=rules_frame, anchor="nw")
+    
+    def on_rules_frame_configure(event):
+        rules_canvas.configure(scrollregion=rules_canvas.bbox("all"))
+    rules_frame.bind("<Configure>", on_rules_frame_configure)
+    
+    header_row = tk.Frame(rules_frame, bg="#333333")
+    header_row.grid(row=0, column=0, sticky="ew", padx=5, pady=(0, 5))
+    tk.Label(header_row, text="Add Details", bg="#333333", fg="white", 
+             font=("Helvetica", 9), width=20, anchor="w")\
+        .grid(row=0, column=0, padx=5, sticky="w")
+    tk.Label(header_row, text="Protocol", bg="#333333", fg="white", 
+             font=("Helvetica", 9), width=10, anchor="w")\
+        .grid(row=0, column=1, padx=5, sticky="w")
+    tk.Label(header_row, text="Port Range", bg="#333333", fg="white", 
+             font=("Helvetica", 9), width=15, anchor="w")\
+        .grid(row=0, column=2, padx=5, sticky="w")
+    tk.Label(header_row, text="", bg="#333333", fg="white", 
+             font=("Helvetica", 9), width=6, anchor="w")\
+        .grid(row=0, column=3, padx=5, sticky="w")
+    
+    rule_row_index = 1
+    
     def add_rule_row(add_details="Any IPv4, Any IPv6", protocol="", port_range=""):
-        row = tk.Frame(rules_frame)
-        row.pack(fill='x', padx=5, pady=2)
-
+        nonlocal rule_row_index
+        row = tk.Frame(rules_frame, bg="#333333")
+        row.grid(row=rule_row_index, column=0, sticky="ew", padx=5, pady=2)
+        rule_row_index += 1
+        
         add_details_var = tk.StringVar(value=add_details)
-        add_details_entry = tk.Entry(row, width=20, textvariable=add_details_var)
-        add_details_entry.pack(side=tk.LEFT)
-
+        add_details_entry = tk.Entry(row, width=20, textvariable=add_details_var,
+                                     bg="white", fg="black", font=("Helvetica", 9))
+        add_details_entry.grid(row=0, column=0, padx=5, sticky="w")
+        
         if protocol == "ssh" and port_range == "22":
             ssh_var_dict[row] = add_details_var
-
-            tk.Label(row, text="ssh", width=10).pack(side=tk.LEFT)
-            tk.Label(row, text="22", width=15).pack(side=tk.LEFT)
+            tk.Label(row, text="ssh", bg="#333333", fg="white", font=("Helvetica", 9),
+                     width=10, anchor="w").grid(row=0, column=1, padx=5, sticky="w")
+            tk.Label(row, text="22", bg="#333333", fg="white", font=("Helvetica", 9),
+                     width=15, anchor="w").grid(row=0, column=2, padx=5, sticky="w")
         elif protocol == "icmp":
-            tk.Label(row, text="icmp", width=10).pack(side=tk.LEFT)
-            tk.Label(row, text="", width=15).pack(side=tk.LEFT)
+            tk.Label(row, text="icmp", bg="#333333", fg="white", font=("Helvetica", 9),
+                     width=10, anchor="w").grid(row=0, column=1, padx=5, sticky="w")
+            tk.Label(row, text="", bg="#333333", fg="white", font=("Helvetica", 9),
+                     width=15, anchor="w").grid(row=0, column=2, padx=5, sticky="w")
         else:
             protocol_options = ["tcp", "udp"]
             protocol_menu = ttk.Combobox(row, values=protocol_options, width=10)
             protocol_menu.set(protocol)
-            protocol_menu.pack(side=tk.LEFT)
-
+            protocol_menu.grid(row=0, column=1, padx=5, sticky="w")
+            
             port_range_var = tk.StringVar(value=port_range)
-            port_range_entry = tk.Entry(row, width=15, textvariable=port_range_var)
-            port_range_entry.pack(side=tk.LEFT)
-
-            tk.Button(row, text="DELETE", command=lambda: row.destroy()).pack(side=tk.LEFT)
-
-    if firewall_details.get('rules'):
-        for rule in firewall_details['rules']:
-            source_ips = ", ".join(rule.get('source_ips', [])).replace("0.0.0.0/0", "Any IPv4").replace("::/0", "Any IPv6")
+            port_range_entry = tk.Entry(row, width=15, textvariable=port_range_var,
+                                        bg="white", fg="black", font=("Helvetica", 9))
+            port_range_entry.grid(row=0, column=2, padx=5, sticky="w")
+            if not (protocol == "ssh" and port_range == "22") and protocol != "icmp":
+                delete_button = ttk.Button(row, text="DELETE",
+                                           command=lambda: row.destroy())
+                delete_button.grid(row=0, column=3, padx=5, sticky="w")
+    
+    rules = firewall_details.get('rules')
+    if rules and len(rules) > 0:
+        for rule in rules:
+            source_ips = ", ".join(rule.get('source_ips', []))
+            source_ips = source_ips.replace("0.0.0.0/0", "Any IPv4").replace("::/0", "Any IPv6")
             protocol = rule.get('protocol', '')
             port_range = rule.get('port', '') if rule.get('port') else ""
-
             if protocol == "tcp" and port_range == "22":
                 add_rule_row(source_ips, "ssh", "22")
             elif protocol == "icmp":
@@ -785,12 +822,15 @@ def create_edit_firewall_window(api_key, firewall_details, firewall_dropdown):
         add_rule_row("Any IPv4, Any IPv6", "icmp", "")
         add_rule_row("Any IPv4, Any IPv6", "tcp", "9000-9001")
         add_rule_row("Any IPv4, Any IPv6", "tcp", "9010-9011")
-
-    tk.Button(edit_window, text="ADD", command=lambda: add_rule_row()).pack()
-
-    tk.Button(edit_window, text="Secure Access to WAN IP", command=secure_ssh_to_wan_ip).pack(pady=5)
-
-    tk.Button(edit_window, text="Save", width=20, command=lambda: save_firewall(api_key, name_entry.get(), rules_frame, firewall_details.get('id'), firewall_dropdown, edit_window)).pack(side=tk.BOTTOM, pady=10)
+    
+    ttk.Button(edit_window, text="ADD", style="DarkRed.TButton",
+           command=lambda: add_rule_row()).pack()
+    ttk.Button(edit_window, text="Secure Access to WAN IP", style="DarkRed.TButton",
+            command=secure_ssh_to_wan_ip).pack(pady=5)
+    ttk.Button(edit_window, text="Save", style="DarkRed.TButton", width=20,
+            command=lambda: save_firewall(api_key, name_entry.get(), rules_frame,
+                                            firewall_details.get('id'), firewall_dropdown, edit_window)
+            ).pack(side=tk.BOTTOM, pady=10)
 
 def save_firewall(api_key, new_name, rules_frame, firewall_id, firewall_dropdown, edit_window):
     logging.debug("save_firewall called")
@@ -1967,33 +2007,54 @@ def create_app_window(api_key):
         export_to_putty_var = None
 
     app = tk.Toplevel()
+    app.configure(bg="#333333")
+    app.option_add("*Font", ("Helvetica", 9))
     app.title("Hetzner Cloud Management Tool")
     app.geometry("825x535")
 
     style = ttk.Style()
     style.theme_use("clam")
 
+    style.map("Custom.TButton", background=[("active", "#000000"), ("!active", "#8B0000")])
+
     style.configure(
         "CreateServer.TButton",
         foreground="white",
-        background="#00008B",  # Dark blue
+        background="#8B0000",  # Hetzner Red
         font=("Helvetica", 12, "bold"),
     )
     style.map(
         "CreateServer.TButton",
-        background=[("active", "#000000"), ("!active", "#00008B")],  # Dark blue with black on hover
+        background=[("active", "#000000"), ("!active", "#8B0000")],  # Hetzner Red with black on hover
     )
 
     style.configure(
         "InstallNodectl.TButton",
         foreground="white",
-        background="dark green",  # Dark green
+        background="#00028b",  # Dark blue
         font=("Helvetica", 12, "bold"),
     )
     style.map(
         "InstallNodectl.TButton",
-        background=[("active", "#000000"), ("!active", "dark green")],  # Dark green with black on hover
+        background=[("active", "#000000"), ("!active", "#00028b")],  # Dark blue with black on hover
     )
+    
+    style.configure("TNotebook", background="#222222")
+    style.configure("TFrame", background="#333333")
+    notebook = ttk.Notebook(app, style="TNotebook")
+
+    style.configure("TNotebook.Tab", background="#333333", foreground="white")
+    style.map("TNotebook.Tab",
+            background=[("selected", "#8B0000"), ("active", "#444444")],
+            foreground=[("selected", "white"), ("active", "white")])
+
+    style.configure("Dark.TCheckbutton",
+                background="#333333",
+                foreground="white",
+                font=("Helvetica", 9))
+    style.map("Dark.TCheckbutton",
+          background=[("active", "#333333")],
+          foreground=[("active", "white")])
 
     app.minsize(815, 535)
 
@@ -2066,14 +2127,16 @@ def create_app_window(api_key):
         save_config(config_data)
 
         threads_to_ignore = {'pydevd.Writer', 'pydevd.Reader', 'pydevd.CommandThread', 'pydevd.CheckAliveThread'}
-
         for thread in threading.enumerate():
             if thread.name not in threads_to_ignore and thread is not threading.main_thread():
                 logging.debug(f"Waiting for thread {thread.name} to finish.")
-                thread.join(timeout=1)
+                try:
+                    thread.join(timeout=1)
+                except RuntimeError as e:
+                    logging.debug(f"Skipping thread {thread.name}: {e}")
 
-        app.quit()
-        app.destroy()
+        root.quit()
+        root.destroy()
         sys.exit(0)
 
     app.protocol("WM_DELETE_WINDOW", on_closing)
@@ -2096,20 +2159,28 @@ def create_app_window(api_key):
     notebook = ttk.Notebook(app)
     notebook.pack(fill='both', expand=True)
 
-    create_server_tab = tk.Frame(notebook)
-    install_nodectl_tab = tk.Frame(notebook)
+    create_server_tab = tk.Frame(notebook, bg="#333333")
+    install_nodectl_tab = tk.Frame(notebook, bg="#333333")
+
+    style.configure("TLabel", background="#333333", foreground="white", font=("Helvetica", 9))
+    style.configure("TEntry", foreground="white", fieldbackground="#333333", font=("Helvetica", 9))
+    style.configure("TButton", background="#8B0000", foreground="white", font=("Helvetica", 9))
+    style.map("TButton", background=[("active", "#000000"), ("!active", "#8B0000")])
+    style.layout("TButton", [("Button.border", {"sticky": "nswe", "children": [("Button.padding", {"sticky": "nswe", "children": [("Button.label", {"sticky": "nswe"})]})]})])
+    style.configure("TCombobox", background="#8B0000", font=("Helvetica", 9))
+    style.map("TCombobox", background=[("active", "#000000"), ("!active", "#8B0000")])
 
     notebook.add(create_server_tab, text="Create Server")
     notebook.add(install_nodectl_tab, text="Install nodectl")
 
     # Create Server Tab
-    tk.Label(create_server_tab, text="Server Name:").grid(row=0, column=1, padx=5, pady=5, sticky='w')
+    ttk.Label(create_server_tab, text="Server Name:").grid(row=0, column=1, padx=5, pady=5, sticky='w')
     server_name_entry = tk.Entry(create_server_tab, width=33)
     Tooltip(server_name_entry, "Type the name for your new server.\n(No spaces or special characters).")
     server_name_entry.grid(row=0, column=1, padx=(100, 0), pady=10, sticky='w')
     server_name_entry.insert(0, config.get("server_name", ""))
 
-    tk.Label(create_server_tab, text="Location:").grid(row=1, column=1, padx=5, pady=5, sticky='w')
+    ttk.Label(create_server_tab, text="Location:").grid(row=1, column=1, padx=5, pady=5, sticky='w')
     selected_location_var = tk.StringVar(value=config.get("location", ""))
     locations_sorted = sorted(locations, key=lambda loc: loc['description'])
 
@@ -2120,7 +2191,7 @@ def create_app_window(api_key):
     location_dropdown.set(config.get("location", ""))
 
     # Distribution Label & Dropdown
-    tk.Label(create_server_tab, text="Distribution:").grid(row=3, column=1, padx=5, pady=5, sticky='w')
+    ttk.Label(create_server_tab, text="Distribution:").grid(row=3, column=1, padx=5, pady=5, sticky='w')
     distribution_var = tk.StringVar(value="ubuntu-22.04")
     distribution_dropdown = ttk.Combobox(
         create_server_tab,
@@ -2166,46 +2237,46 @@ def create_app_window(api_key):
     adjust_column_widths(specs_tree)
     specs_frame.config(width=400)
     
-    tk.Label(create_server_tab, text="Firewall:").grid(row=0, column=2, padx=5, pady=5, sticky='w')
+    ttk.Label(create_server_tab, text="Firewall:").grid(row=0, column=2, padx=5, pady=5, sticky='w')
     firewall_dropdown = ttk.Combobox(create_server_tab, textvariable=selected_firewall, values=[fw['name'] for fw in firewalls], width=25)
     firewall_dropdown.set(config.get("firewall", ""))
     firewall_dropdown.grid(row=0, column=2, padx=(100, 0), pady=10, sticky='w')
 
-    firewall_buttons_frame = tk.Frame(create_server_tab)
+    firewall_buttons_frame = ttk.Frame(create_server_tab)
     firewall_buttons_frame.grid(row=0, column=3, padx=10, pady=10, sticky='e')
 
-    new_button = tk.Button(firewall_buttons_frame, text="New", command=lambda: create_edit_firewall_window(api_key, {}, firewall_dropdown), width=10)
-    edit_button = tk.Button(firewall_buttons_frame, text="Edit", command=lambda: edit_firewall(api_key, selected_firewall.get(), firewall_dropdown), width=10)
-    delete_button = tk.Button(firewall_buttons_frame, text="Delete", command=lambda: delete_firewall(api_key, selected_firewall.get(), firewall_dropdown, selected_firewall), width=10)    
+    new_button = ttk.Button(firewall_buttons_frame, text="New", command=lambda: create_edit_firewall_window(api_key, {}, firewall_dropdown), width=10)
+    edit_button = ttk.Button(firewall_buttons_frame, text="Edit", command=lambda: edit_firewall(api_key, selected_firewall.get(), firewall_dropdown), width=10)
+    delete_button = ttk.Button(firewall_buttons_frame, text="Delete", command=lambda: delete_firewall(api_key, selected_firewall.get(), firewall_dropdown, selected_firewall), width=10)    
     delete_button.pack(side=tk.LEFT, padx=5)
 
     update_firewall_buttons()
 
     selected_firewall.trace("w", update_firewall_buttons)
 
-    tk.Label(create_server_tab, text="SSH Key:").grid(row=1, column=2, padx=5, pady=5, sticky='w')
+    ttk.Label(create_server_tab, text="SSH Key:").grid(row=1, column=2, padx=5, pady=5, sticky='w')
     ssh_dropdown = ttk.Combobox(create_server_tab, textvariable=selected_ssh, values=[ssh['name'] for ssh in ssh_keys], width=25)
     ssh_dropdown.set(config.get("ssh_key", ""))
     ssh_dropdown.grid(row=1, column=2, padx=(100, 0), pady=10, sticky='w')
 
-    ssh_buttons_frame = tk.Frame(create_server_tab)
+    ssh_buttons_frame = ttk.Frame(create_server_tab)
     ssh_buttons_frame.grid(row=1, column=3, padx=10, pady=10, sticky='e')
 
     def update_ssh_buttons(*args):
         for widget in ssh_buttons_frame.winfo_children():
             widget.destroy()
 
-        button_frame = tk.Frame(ssh_buttons_frame)
+        button_frame = ttk.Frame(ssh_buttons_frame)
         button_frame.pack(side=tk.LEFT, padx=5)
 
-        delete_button = tk.Button(button_frame, text="Delete", command=lambda: delete_ssh_key(api_key, selected_ssh.get(), ssh_dropdown, selected_ssh, update_ssh_buttons), width=10)
+        delete_button = ttk.Button(button_frame, text="Delete", command=lambda: delete_ssh_key(api_key, selected_ssh.get(), ssh_dropdown, selected_ssh, update_ssh_buttons), width=10)
         delete_button.pack(side=tk.LEFT)
 
         if selected_ssh.get().startswith("Local: "):
-            import_button = tk.Button(button_frame, text="Import", command=lambda: import_ssh(api_key, selected_ssh.get().replace("Local: ", ""), ssh_dropdown), width=10)
+            import_button = ttk.Button(button_frame, text="Import", command=lambda: import_ssh(api_key, selected_ssh.get().replace("Local: ", ""), ssh_dropdown), width=10)
             import_button.pack(side=tk.RIGHT, padx=(10, 0))
         else:
-            new_button = tk.Button(button_frame, text="New", command=lambda: create_ssh_key(api_key, selected_ssh.get(), None, ssh_dropdown), width=10)
+            new_button = ttk.Button(button_frame, text="New", command=lambda: create_ssh_key(api_key, selected_ssh.get(), None, ssh_dropdown), width=10)
             if selected_ssh.get() in [ssh['name'] for ssh in ssh_keys]:
                 new_button.config(state=tk.DISABLED)
             else:
@@ -2281,7 +2352,7 @@ def create_app_window(api_key):
     create_server_tab.grid_rowconfigure(2, weight=1)
 
     # Install nodectl Tab
-    tk.Label(install_nodectl_tab, text="Select Server:").grid(row=0, column=0, padx=(10, 5), pady=10, sticky='w')
+    ttk.Label(install_nodectl_tab, text="Select Server:").grid(row=0, column=0, padx=(10, 5), pady=10, sticky='w')
     selected_server_var = tk.StringVar()
 
     server_dropdown = ttk.Combobox(
@@ -2297,7 +2368,7 @@ def create_app_window(api_key):
         lambda *args: on_server_select(selected_server_var, status_text, api_key, *args)
     )
 
-    tk.Label(install_nodectl_tab, text="Select SSH Key:").grid(row=0, column=2, padx=(10, 5), pady=10, sticky='e')
+    ttk.Label(install_nodectl_tab, text="Select SSH Key:").grid(row=0, column=2, padx=(10, 5), pady=10, sticky='e')
     ssh_dropdown2 = ttk.Combobox(
         install_nodectl_tab, 
         textvariable=selected_ssh, 
@@ -2309,7 +2380,7 @@ def create_app_window(api_key):
 
     selected_ssh.trace("w", lambda *args: ssh_dropdown2.set(selected_ssh.get()))
 
-    tk.Label(install_nodectl_tab, text="Select Network:").grid(row=1, column=0, padx=(10, 5), pady=10, sticky='w')
+    ttk.Label(install_nodectl_tab, text="Select Network:").grid(row=1, column=0, padx=(10, 5), pady=10, sticky='w')
     selected_network_var = tk.StringVar(value="")
     network_dropdown = ttk.Combobox(
         install_nodectl_tab, 
@@ -2321,7 +2392,7 @@ def create_app_window(api_key):
 
     nodectl_versions, latest_nodectl_version = get_available_nodectl_versions()
 
-    tk.Label(install_nodectl_tab, text="nodectl Version:").grid(row=1, column=2, padx=(10, 5), pady=10, sticky='e')
+    ttk.Label(install_nodectl_tab, text="nodectl Version:").grid(row=1, column=2, padx=(10, 5), pady=10, sticky='e')
     selected_nodectl_version_var = tk.StringVar(value=latest_nodectl_version)
     nodectl_version_dropdown = ttk.Combobox(
         install_nodectl_tab,
@@ -2331,7 +2402,7 @@ def create_app_window(api_key):
     )
     nodectl_version_dropdown.grid(row=1, column=3, padx=(5, 10), pady=10, ipadx=5, sticky='ew')
 
-    tk.Label(install_nodectl_tab, text="Node Username:").grid(row=2, column=0, padx=10, pady=10, sticky='w')
+    ttk.Label(install_nodectl_tab, text="Node Username:").grid(row=2, column=0, padx=10, pady=10, sticky='w')
     node_username_var = tk.StringVar(value="nodeadmin")
     username_entry = tk.Entry(
         install_nodectl_tab, 
@@ -2368,16 +2439,16 @@ def create_app_window(api_key):
 
     install_nodectl_tab.grid_rowconfigure(3, weight=1)
 
-    p12_frame = tk.Frame(install_nodectl_tab)
+    p12_frame = ttk.Frame(install_nodectl_tab)
     p12_frame.grid(row=4, column=0, columnspan=4, padx=10, pady=10, sticky='w')
 
-    tk.Label(p12_frame, text="Import P12 File (Optional):").grid(row=0, column=0, sticky='w')
+    ttk.Label(p12_frame, text="Import P12 File (Optional):").grid(row=0, column=0, sticky='w')
 
     p12_file_var = tk.StringVar()
     p12_file_entry = tk.Entry(p12_frame, textvariable=p12_file_var, width=50)
     p12_file_entry.grid(row=0, column=1, padx=(5, 0), sticky='w')
 
-    p12_file_button = tk.Button(
+    p12_file_button = ttk.Button(
         p12_frame, 
         text="Browse",
         command=lambda: p12_file_var.set(filedialog.askopenfilename(filetypes=[("P12 Files", "*.p12"), ("All Files", "*.*")]))
@@ -2385,18 +2456,20 @@ def create_app_window(api_key):
     p12_file_button.grid(row=0, column=2, padx=5, sticky='w')
 
     if os.name == 'nt':
-        create_shortcuts_checkbox = tk.Checkbutton(
+        create_shortcuts_checkbox = ttk.Checkbutton(
             install_nodectl_tab,
             text="Create SSH & SFTP Desktop Shortcuts",
-            variable=create_shortcuts_var
+            variable=create_shortcuts_var,
+            style="Dark.TCheckbutton"
         )
         create_shortcuts_checkbox.grid(row=5, column=1, padx=50, pady=0, sticky='w')
 
     if os.name == 'nt':
-        export_to_putty_checkbox = tk.Checkbutton(
+        export_to_putty_checkbox = ttk.Checkbutton(
             install_nodectl_tab,
             text="Export server settings to PuTTY",
-            variable=export_to_putty_var
+            variable=export_to_putty_var,
+            style="Dark.TCheckbutton"
         )
         export_to_putty_checkbox.grid(row=6, column=1, padx=50, pady=0, sticky='w')
 
