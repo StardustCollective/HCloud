@@ -959,11 +959,13 @@ def create_ssh_key(api_key, ssh_key_name, passphrase, ssh_dropdown):
         messagebox.showerror("Error", "The SSH key already exists locally and cannot be overwritten.")
         return None
 
-    if platform.system() == "Windows":
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         cmd = f'ssh-keygen -t rsa -b 4096 -f "{key_path}" -N "{passphrase}" -C "{ssh_key_name}"'
         result = subprocess.run(
-            cmd, 
-            shell=True, 
+            cmd,
+            shell=True,
+            startupinfo=startupinfo,
             creationflags=subprocess.CREATE_NO_WINDOW,
             capture_output=True,
             text=True
