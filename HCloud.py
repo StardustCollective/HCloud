@@ -960,15 +960,25 @@ def create_ssh_key(api_key, ssh_key_name, passphrase, ssh_dropdown):
         return None
 
     if platform.system() == "Windows":
-        cmd = f"ssh-keygen -t rsa -b 4096 -f \"{key_path}\" -N \"{passphrase}\" -C \"{ssh_key_name}\""
+        cmd = f'ssh-keygen -t rsa -b 4096 -f "{key_path}" -N "{passphrase}" -C "{ssh_key_name}"'
+        result = subprocess.run(
+            cmd, 
+            shell=True, 
+            creationflags=subprocess.CREATE_NO_WINDOW,
+            capture_output=True,
+            text=True
+        )
     else:
         escaped_passphrase = passphrase.replace('"', '\\"')
         cmd = ["ssh-keygen", "-t", "rsa", "-b", "4096", "-f", key_path, "-N", escaped_passphrase, "-C", ssh_key_name]
-    
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True
+        )
 
     if result.returncode != 0:
-        logging.error(f"Failed to generate SSH key locally. Error: {result.stderr.decode('utf-8')}")
+        logging.error(f"Failed to generate SSH key locally. Error: {result.stderr}")
         return None
 
     try:
@@ -1810,7 +1820,6 @@ def install_nodectl_thread(api_key, server_name, ssh_key, log_queue, ssh_passphr
                     f"openssl pkcs12 -in {remote_home}/tessellation/{p12_basename} -passin pass:'{p12_passphrase}' -nodes -nocerts 2>/dev/null | "
                     "openssl ec -pubout -outform DER 2>/dev/null | tail -c 64 | xxd -p -c 256"
                 )
-                log_queue.put("Extracting node ID using OpenSSL...\n")
                 stdin, stdout, stderr = client.exec_command(openssl_cmd)
                 nodeid_output = stdout.read().decode('utf-8').strip()
                 err_output = stderr.read().decode('utf-8').strip()
