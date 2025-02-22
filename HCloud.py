@@ -1755,13 +1755,14 @@ def install_nodectl_thread(api_key, server_name, ssh_key, log_queue, ssh_passphr
             if stderr_output:
                 log_queue.put(f"STDERR:\n{stderr_output}\n")
 
+            installation_complete = False
             log_file_path = None
             possible_log_paths = [
                 "/var/tessellation/nodectl/logs/nodectl.log",
                 "/var/tessellation/nodectl/nodectl.log"
             ]
 
-            log_queue.put(f"Waiting for the nodectl.log file to start processing...\n")
+            log_queue.put("Waiting for the nodectl.log file to start processing...\n")
             while not log_file_path:
                 for path in possible_log_paths:
                     stdin, stdout, stderr = client.exec_command(f'test -f {path} && echo exists')
@@ -1773,41 +1774,62 @@ def install_nodectl_thread(api_key, server_name, ssh_key, log_queue, ssh_passphr
                     time.sleep(2)
             
             def tail_log():
-                nonlocal nodeid
+                nonlocal installation_complete
                 local_client = paramiko.SSHClient()
                 local_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                 local_client.connect(hostname=server_ip, username='root', pkey=private_key)
                 stdin, stdout, stderr = local_client.exec_command(f'tail -f {log_file_path}')
-
-                installation_complete = False
                 for line in iter(stdout.readline, ""):
                     log_queue.put(line)
-
                     if "INFO : Installation complete !!!" in line:
                         log_queue.put("\nnodectl installation process completed.\n\n")
                         installation_complete = True
-                    elif "link key found," in line:
-                        nodeid = line.split()[-1].strip("[]")
-                        log_queue.put(f"\nNode ID found: {nodeid}\n\n")
-
-                    if installation_complete and nodeid:
                         break
-
                 local_client.exec_command(f"{tmux_path} kill-session -t nodectl_install")
                 local_client.close()
-
             tail_thread = threading.Thread(target=tail_log)
             tail_thread.daemon = True
             tail_thread.start()
             tail_thread.join()
 
+            if installation_complete:
+                remote_home = f"/home/{node_username}"
+                if not remote_home:
+                    log_queue.put("Unable to determine remote home directory.\n")
+                    return
+
+                p12_search_command = f"ls {remote_home}/tessellation/*.p12 2>/dev/null"
+                stdin, stdout, stderr = client.exec_command(p12_search_command)
+                remote_files = stdout.read().decode('utf-8').strip().splitlines()
+                if not remote_files or remote_files[0] == "":
+                    log_queue.put(f"No P12 file found in {remote_home}/tessellation on the remote server.\n")
+                    return
+                p12_basename = os.path.basename(remote_files[0])
+                
+                openssl_cmd = (
+                    f"openssl pkcs12 -in {remote_home}/tessellation/{p12_basename} -passin pass:'{p12_passphrase}' -nodes -nocerts 2>/dev/null | "
+                    "openssl ec -pubout -outform DER 2>/dev/null | tail -c 64 | xxd -p -c 256"
+                )
+                log_queue.put("Extracting node ID using OpenSSL...\n")
+                stdin, stdout, stderr = client.exec_command(openssl_cmd)
+                nodeid_output = stdout.read().decode('utf-8').strip()
+                err_output = stderr.read().decode('utf-8').strip()
+                if err_output:
+                    log_queue.put(f"Error extracting node ID: {err_output}\n")
+                if nodeid_output:
+                    nodeid = nodeid_output
+                    log_queue.put(f"\nNode ID extracted: {nodeid}\n\n")
+                else:
+                    log_queue.put("Failed to extract Node ID.\n")
+                    return
+            else:
+                log_queue.put("nodectl installation did not complete as expected.\n")
+                return
+            
             username = node_username
-
             ssh_key_path = os.path.expanduser(f'~/.ssh/{ssh_key}')
-
             ssh_command = f'ssh -i "{ssh_key_path}" {username}@{server_ip}'
             sftp_command = f'sftp -i "{ssh_key_path}" {username}@{server_ip}'
-
             ssh_config_file = save_server_info(server_name, server_ip, ssh_key_path, username, network)
 
             if create_shortcuts:
