@@ -1703,19 +1703,20 @@ def install_nodectl_thread(api_key, server_name, ssh_key, log_queue, ssh_passphr
             tmux_path = stdout.read().decode('utf-8').strip()
             if not tmux_path:
                 log_queue.put("\ntmux not found. Installing tmux...\n")
-
-                stdin, stdout, stderr = client.exec_command('sudo apt-get update && sudo apt-get install -y tmux')
+                cmd = (
+                    "sudo DEBIAN_FRONTEND=noninteractive apt-get update 2>/dev/null && "
+                    "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y tmux 2>/dev/null"
+                )
+                stdin, stdout, stderr = client.exec_command(cmd)
                 stdout.channel.recv_exit_status()
-
                 err_msg = stderr.read().decode('utf-8').strip()
                 if err_msg:
-                    log_queue.put(f"tmux install stderr:\n{err_msg}\n")
-
+                    filtered_err = "\n".join([line for line in err_msg.splitlines() if "debconf" not in line])
+                    if filtered_err:
+                        log_queue.put(f"tmux install stderr (filtered):\n{filtered_err}\n")
                 log_queue.put("tmux installed. Rechecking...\n")
-
                 client.close()
                 client.connect(hostname=server_ip, username='root', pkey=private_key)
-
                 stdin, stdout, stderr = client.exec_command('command -v tmux')
                 tmux_path = stdout.read().decode('utf-8').strip()
                 if not tmux_path:
@@ -1795,7 +1796,7 @@ def install_nodectl_thread(api_key, server_name, ssh_key, log_queue, ssh_passphr
                 nodectl_install_command += f"--p12-migration-path '/root/{os.path.basename(p12_file)}' "
 
             
-            nodectl_install_command += f"--skip-system-validation --confirm; sudo nodectl nodeid -p {nprofile}\""
+            nodectl_install_command += f"--skip-system-validation --confirm\""
 
             log_queue.put(f"\nExecuting nodectl install...\n")
             stdin, stdout, stderr = client.exec_command(nodectl_install_command)
@@ -1858,9 +1859,16 @@ def install_nodectl_thread(api_key, server_name, ssh_key, log_queue, ssh_passphr
                     return
                 p12_basename = os.path.basename(remote_files[0])
                 
+                stdin, stdout, stderr = client.exec_command("which xxd")
+                xxd_path = stdout.read().decode().strip()
+                if xxd_path:
+                    xxd_cmd = "xxd -p -c 256"
+                else:
+                    xxd_cmd = "hexdump -ve '1/1 \"%02x\"'"
+
                 openssl_cmd = (
                     f"openssl pkcs12 -in {remote_home}/tessellation/{p12_basename} -passin pass:'{p12_passphrase}' -nodes -nocerts 2>/dev/null | "
-                    "openssl ec -pubout -outform DER 2>/dev/null | tail -c 64 | xxd -p -c 256"
+                    "openssl ec -pubout -outform DER 2>/dev/null | tail -c 64 | " + xxd_cmd
                 )
                 stdin, stdout, stderr = client.exec_command(openssl_cmd)
                 nodeid_output = stdout.read().decode('utf-8').strip()
