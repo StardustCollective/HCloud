@@ -258,31 +258,42 @@ firewalls = []
 server_types = []
 locations = []
 
-import tkinter as tk
-
 class Tooltip:
     def __init__(self, widget, text):
         self.widget = widget
         self.text = text
         self.tooltip_window = None
+
         widget.bind("<Enter>", self.show_tooltip)
         widget.bind("<Leave>", self.hide_tooltip)
+        
+        if isinstance(widget, ttk.Combobox):
+            widget.bind("<<ComboboxSelected>>", self.hide_tooltip)
+            widget.bind("<Button-1>", self.hide_tooltip)
+            widget.bind("<ButtonRelease-1>", self.hide_tooltip)
+            widget.bind("<FocusOut>", self.hide_tooltip)
 
     def show_tooltip(self, event):
+        if self.tooltip_window is not None:
+            return
+        
         self.tooltip_window = tk.Toplevel(self.widget)
         self.tooltip_window.withdraw()
         self.tooltip_window.overrideredirect(True)
         self.tooltip_window.attributes("-topmost", True)
 
-        label = tk.Label(
-            self.tooltip_window,
-            text=self.text,
-            background="#FFFFE0",
-            relief="solid",
-            borderwidth=1,
-            font=("Helvetica", 8)
-        )
-        label.pack(ipadx=1, ipady=1)
+        border_frame = tk.Frame(self.tooltip_window, bg="#8B0000", bd=1)
+        border_frame.pack()
+        
+        label = tk.Label(border_frame,
+                         text=self.text,
+                         background="#222222",
+                         fg="white",
+                         relief="flat",
+                         font=("Helvetica", 8),
+                         padx=5,
+                         pady=3)
+        label.pack()
         self.tooltip_window.update_idletasks()
 
         tip_width = self.tooltip_window.winfo_width()
@@ -290,7 +301,6 @@ class Tooltip:
 
         root_window = self.widget.winfo_toplevel()
         root_window.update_idletasks()
-
         screen_width = root_window.winfo_screenwidth()
         screen_height = root_window.winfo_screenheight()
 
@@ -304,6 +314,7 @@ class Tooltip:
 
         x_above = main_x + (main_w // 2) - (tip_width // 2)
         y_above = main_y - tip_height - offset - extra_for_top_bar
+
         if (x_above >= 0) and (y_above >= 0):
             final_x, final_y = x_above, y_above
         else:
@@ -312,17 +323,16 @@ class Tooltip:
             if ((x_below + tip_width) <= screen_width) and ((y_below + tip_height) <= screen_height):
                 final_x, final_y = x_below, y_below
             else:
-                final_x = 50
-                final_y = 50
+                final_x, final_y = 50, 50
 
         final_x = max(0, min(final_x, screen_width - tip_width))
         final_y = max(0, min(final_y, screen_height - tip_height))
 
         self.tooltip_window.geometry(f"+{final_x}+{final_y}")
-        self.tooltip_window.deiconify()  
+        self.tooltip_window.deiconify()
         self.tooltip_window.lift()
 
-    def hide_tooltip(self, event):
+    def hide_tooltip(self, event=None):
         if self.tooltip_window:
             self.tooltip_window.destroy()
             self.tooltip_window = None
@@ -2175,7 +2185,7 @@ def create_app_window(api_key):
     style.configure("TButton", background="#8B0000", foreground="white", font=("Helvetica", 9))
     style.map("TButton", background=[("active", "#000000"), ("!active", "#8B0000")])
     style.layout("TButton", [("Button.border", {"sticky": "nswe", "children": [("Button.padding", {"sticky": "nswe", "children": [("Button.label", {"sticky": "nswe"})]})]})])
-    style.configure("TCombobox", background="#8B0000", font=("Helvetica", 9))
+    style.configure("TCombobox", background="#8B0000", font=("Helvetica", 9), arrowcolor="white")
     style.map("TCombobox", background=[("active", "#000000"), ("!active", "#8B0000")])
 
     notebook.add(create_server_tab, text="Create Server")
@@ -2194,7 +2204,7 @@ def create_app_window(api_key):
 
     # Server Location
     location_dropdown = ttk.Combobox(create_server_tab, textvariable=selected_location_var, values=[f"{loc['name']}: {loc['description']}" for loc in locations_sorted], width=30)
-    Tooltip(location_dropdown, "Select the location for your new server.\nThe available specs for that location will be visible below.\n\nRecommended specs at this time are:\nCPU's ........... 8\nRAM (Memory) .. 16GB\nStorage ................ 320GB\nTraffic ............... 10TB\n")
+    Tooltip(location_dropdown, "Select the location for your new server.\nThe available specs for that location will be visible below.\n\nRecommended specs at this time are:\nCPU's ........... 8\nRAM (Memory) .. 16GB\nStorage ................ 320GB\n")
     location_dropdown.grid(row=1, column=1, padx=(100, 0), pady=10, sticky='w')
     location_dropdown.set(config.get("location", ""))
 
