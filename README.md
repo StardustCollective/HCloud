@@ -25,11 +25,14 @@ Welcome to **HCloud**, a user-friendly GUI tool for managing your Hetzner Cloud 
 
 - [Installation](#installation)
   - [Windows](#windows)
-  - [macOS](#macos)
+  - [MacOS](#macos)
   - [Ubuntu Desktop](#ubuntu-desktop)
   - [ChromeOS](#chromeos)
 - [How to Use HCloud](#how-to-use-hcloud)
+  - [Launch HCloud](#launch-hcloud)
   - [Enter Your Hetzner API Key](#enter-your-hetzner-api-key)
+  - [Create Server Tab](#create-server-tab)
+  - [Install nodectl Tab](#install-nodectl-tab)
 - [Acknowledgments](#acknowledgments)
 
 ---
@@ -53,7 +56,7 @@ Welcome to **HCloud**, a user-friendly GUI tool for managing your Hetzner Cloud 
 
 ---
 
-### macOS
+### MacOS
 
 Open **Terminal** and run:
 
@@ -85,7 +88,9 @@ wget https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py 
 
 ## How to Use HCloud
 
-1. **Launch `HCloud_Launcher.bat` on Windows or `HCloud_Launcher.sh` on MacOS:**
+### Launch HCloud
+
+1. **Launch `HCloud_Launcher.bat` (Windows) or `HCloud_Launcher.sh` (MacOS):**
    - Do you want to set up a local environment for HCloud?
      -----
      <img width="489" alt="image" src="https://github.com/user-attachments/assets/dcaee374-87e4-4332-ae90-52d5af9fabe4" />
