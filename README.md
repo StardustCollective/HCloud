@@ -34,7 +34,7 @@ Welcome to **HCloud**, a user-friendly GUI tool for managing your Hetzner Cloud 
   - [Enter Your Hetzner API Key](#enter-your-hetzner-api-key)
   - [Create Server Tab](#create-server-tab)
   - [Install nodectl Tab](#install-nodectl-tab)
-- [Import Server Into Termius](#import-server-into-termius)
+- [Import Server Settings Into Termius](#import-server-settings-into-termius)
   
 - [Acknowledgments](#acknowledgments)
 
@@ -195,7 +195,7 @@ wget https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py 
 
 ---
 
-## Import Server Into Termius
+## Import Server Settings Into Termius
 
    After you have successfully installed nodectl on your new cloud server, you can easily import the server settings into Termius.
 
