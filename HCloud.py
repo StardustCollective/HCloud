@@ -219,7 +219,7 @@ def install_required_packages_in_thread(log_widget=None, completion_callback=Non
             completion_callback()
 
     thread = threading.Thread(target=install_packages)
-    thread.daemon = True
+    thread.daemon = False
     thread.start()
 
 def install_required_packages(log_widget=None):
@@ -1851,7 +1851,7 @@ def install_nodectl_thread(api_key, server_name, ssh_key, log_queue, ssh_passphr
                 local_client.exec_command(f"{tmux_path} kill-session -t nodectl_install")
                 local_client.close()
             tail_thread = threading.Thread(target=tail_log)
-            tail_thread.daemon = True
+            tail_thread.daemon = False
             tail_thread.start()
             tail_thread.join()
 
@@ -2074,6 +2074,20 @@ def create_app_window(api_key):
           background=[("active", "#333333")],
           foreground=[("active", "white")])
 
+    style.configure(
+        "Treeview.Heading",
+        background="#8B0000",
+        foreground="white",
+        bordercolor="#000000"
+        # relief="flat"
+    )
+
+    style.map(
+        "Treeview.Heading",
+        background=[("active", "#000000")],
+        foreground=[("active", "white")]
+    )
+
     app.minsize(815, 535)
 
     menu_bar = tk.Menu(app)
@@ -2144,18 +2158,21 @@ def create_app_window(api_key):
         }
         save_config(config_data)
 
-        threads_to_ignore = {'pydevd.Writer', 'pydevd.Reader', 'pydevd.CommandThread', 'pydevd.CheckAliveThread'}
+        threads_to_ignore = {
+            'pydevd.Writer', 'pydevd.Reader', 'pydevd.CommandThread', 'pydevd.CheckAliveThread'
+        }
         for thread in threading.enumerate():
             if thread.name not in threads_to_ignore and thread is not threading.main_thread():
                 logging.debug(f"Waiting for thread {thread.name} to finish.")
                 try:
-                    thread.join(timeout=1)
+                    # Wait (no timeout) so the thread can clean up properly
+                    thread.join()
                 except RuntimeError as e:
                     logging.debug(f"Skipping thread {thread.name}: {e}")
 
         root.quit()
         root.destroy()
-        sys.exit(0)
+        # sys.exit(0)
 
     app.protocol("WM_DELETE_WINDOW", on_closing)
 
@@ -2167,6 +2184,11 @@ def create_app_window(api_key):
     def update_firewall_buttons(*args):
         selected_firewall_name = selected_firewall.get()
         
+        if not selected_firewall_name:
+            delete_button.config(state="disabled")
+        else:
+            delete_button.config(state="normal")
+            
         if selected_firewall_name in [fw['name'] for fw in firewalls]:
             new_button.pack_forget()
             edit_button.pack(side=tk.LEFT, padx=5)
@@ -2182,7 +2204,7 @@ def create_app_window(api_key):
 
     style.configure("TLabel", background="#333333", foreground="white", font=("Helvetica", 9))
     style.configure("TEntry", foreground="white", fieldbackground="#333333", font=("Helvetica", 9))
-    style.configure("TButton", background="#8B0000", foreground="white", font=("Helvetica", 9))
+    style.configure("TButton", relief="flat", borderwidth=0, background="#8B0000", foreground="white", font=("Helvetica", 9))
     style.map("TButton", background=[("active", "#000000"), ("!active", "#8B0000")])
     style.layout("TButton", [("Button.border", {"sticky": "nswe", "children": [("Button.padding", {"sticky": "nswe", "children": [("Button.label", {"sticky": "nswe"})]})]})])
     style.configure("TCombobox", background="#8B0000", font=("Helvetica", 9), arrowcolor="white")
