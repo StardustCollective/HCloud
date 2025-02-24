@@ -139,7 +139,7 @@ wget https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py 
     
      - **Firewall Management:**  
        You’ll be prompted to add your Home IP for extra security. (This helps prevent unauthorized access.)
-       <img width="302" alt="image" src="https://github.com/user-attachments/assets/16dacc74-86ad-4b96-bb01-7ac7fdbeaeba" />
+       ![Screenshot 2025-02-24 140735 copy](https://github.com/user-attachments/assets/36ac43cb-400b-4c79-bbeb-7fb81d228afd)
 
          If you choose `Yes` then HCloud will ask if you have additional IP addresses you would like to give access to this server. For instance a Mobile Data IP address or maybe a Work IP. You can find the correct IP's by making sure you browse to whatsmyip.org on a device connected to that network.
        
