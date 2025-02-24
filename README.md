@@ -99,12 +99,13 @@ wget https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py 
      If this is the first launch, you will need to send `d` for Download. In the future you can send `D` to download the latest version or `L` to launch the current version you have.
      
 -----
-3. **Enter Your Hetzner API Key:**
+2. **Enter Your Hetzner API Key:**
    - When prompted, paste your Hetzner Cloud API key.
      -----
    ![Screenshot 2025-02-19 162320](https://github.com/user-attachments/assets/5624a3f6-5aa5-4dac-84a0-34426ffaf5fe)
 
      If you don’t have one, follow these steps:
+   
      -----
    **Creating a Hetzner API Key:**
    - **Log in to Hetzner Cloud:**  
@@ -123,9 +124,10 @@ wget https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py 
      <img width="401" alt="image" src="https://github.com/user-attachments/assets/a538141d-0356-4df8-a9a3-51110b485b03" />
 
      Since the key is shown only once, copy it now and paste it into HCloud. For security purposes it is not recommended to save this API key anywhere. You can always create a new one later if you need one in the future.
+     
      -----
      
-5. **Manage Your Cloud Resources:**
+3. **Manage Your Cloud Resources:**
 
    ### Create Server Tab
 
@@ -133,6 +135,7 @@ wget https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py 
 
      Enter a Server Name, select a Location, choose the Server Specs and the Distribution OS.  
      HCloud auto-fills firewall and SSH key names if you leave them blank.
+   
      -----
      
   - Click the `Create Server` button once you have entered all of the needed information.
@@ -190,6 +193,8 @@ If you find HCloud helpful, please consider sending a tip!
 
 **DAG Wallet Address:**  
 `DAG0Zyq8XPnDKRB3wZaFcFHjL4seCLSDtHbUcYq3`
+
+-----
 
 ---
 
