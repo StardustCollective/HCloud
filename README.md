@@ -182,10 +182,13 @@ wget https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py 
 
    <img width="614" alt="image" src="https://github.com/user-attachments/assets/cc192359-f107-4acf-ac84-90e5d120955b" />
 
-   - **Select Server & Network:**  
-     Your server details and network selection are auto-populated after server creation.
+   - **Select Server:**  
+     Your server details are auto-populated after server creation. But there are some details you will still need to input.
+   - **Select Network:**
+     Choose what network you need to setup for.
+     mainnet, integrationnet, testnet, (other options will be added in the future).
    - **Node Username:**  
-     Defaults to `nodeadmin` (change if needed, but remember it).
+     Defaults to `nodeadmin` (change if needed, but make sure you document it).
    - **nodectl Version:**  
      Make sure you install the correct nodectl version (check your Discord chat for details).
    - **Additional Options:**  
@@ -193,6 +196,9 @@ wget https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py 
      - **Desktop Shortcuts:** On Windows, you can choose to create SSH/SFTP shortcuts.
      - **Export to PuTTY:** (Windows Only) If you have PuTTY and WinSCP installed, HCloud can export server settings to PuTTY.
 
+- Click the `Install nodectl` button once you have entered all of the needed information.
+    It will take roughly 2 minutes for nodectl to complete the install. Once it is complete, you will get a `Success` Window with your nodeID and an option to view the new ssh_config file. You can also import this config file into Termius!
+    
 ---
 
 ## Import Server Settings Into Termius
