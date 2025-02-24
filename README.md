@@ -27,7 +27,7 @@ Welcome to **HCloud**, a user-friendly GUI tool for managing your Hetzner Cloud 
   - [Windows](#windows)
   - [macOS](#macos)
   - [Ubuntu Desktop](#ubuntu-desktop)
-  - [ChromeOS](#chromos)
+  - [ChromeOS](#chromeos)
 - [How to Use HCloud](#how-to-use-hcloud)
   - [Enter Your Hetzner API Key](#enter-your-hetzner-api-key)
 - [Acknowledgments](#acknowledgments)
@@ -99,7 +99,8 @@ wget https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py 
      If this is the first launch, you will need to send `d` for Download. In the future you can send `D` to download the latest version or `L` to launch the current version you have.
      
 -----
-2. **Enter Your Hetzner API Key:**
+
+2. #### Enter Your Hetzner API Key
    - When prompted, paste your Hetzner Cloud API key.
      -----
    ![Screenshot 2025-02-19 162320](https://github.com/user-attachments/assets/5624a3f6-5aa5-4dac-84a0-34426ffaf5fe)
