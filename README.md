@@ -28,11 +28,14 @@ Welcome to **HCloud**, a user-friendly GUI tool for managing your Hetzner Cloud 
   - [MacOS](#macos)
   - [Ubuntu Desktop](#ubuntu-desktop)
   - [ChromeOS](#chromeos)
+    
 - [How to Use HCloud](#how-to-use-hcloud)
   - [Launch HCloud](#launch-hcloud)
   - [Enter Your Hetzner API Key](#enter-your-hetzner-api-key)
   - [Create Server Tab](#create-server-tab)
   - [Install nodectl Tab](#install-nodectl-tab)
+- [Import Server Into Termius](#import-server-into-termius)
+  
 - [Acknowledgments](#acknowledgments)
 
 ---
@@ -192,6 +195,24 @@ wget https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py 
 
 ---
 
+## Import Server Into Termius
+
+   After you have successfully installed nodectl on your new cloud server, you can easily import the server settings into Termius.
+
+   - **Open Termius on your Windows or MacOS**
+   - Click the dropdown on `New Host` and select `Import`.
+
+     ![Screenshot 2025-02-24 163041](https://github.com/user-attachments/assets/44154962-1683-4d87-af4c-60a297f331b3)
+
+   - Select option ssh_config (Windows) or SSH:> (MacOS).
+
+     <img width="399" alt="image" src="https://github.com/user-attachments/assets/b428a9ad-3973-44a5-994b-17df2315dceb" />
+
+   - On Windows you will browse to your config file that was created by HCloud. It can be found next to the HCloud files inside of a folder named `SERVERS`.
+   - On MacOS you do not need to browse. You should see the details already available to submit.
+
+     -----
+     
 ## Acknowledgments
 
 This tool was created by `@Proph151Music` for the Constellation Network ecosystem.  
@@ -200,8 +221,6 @@ If you find HCloud helpful, please consider sending a tip!
 **DAG Wallet Address:**  
 `DAG0Zyq8XPnDKRB3wZaFcFHjL4seCLSDtHbUcYq3`
 
------
-
 ---
 
-Enjoy managing your Hetzner Cloud with **HCloud**!
+Enjoy managing your Hetzner Cloud Server with **HCloud**!
