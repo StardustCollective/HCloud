@@ -186,7 +186,7 @@ wget https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py 
      Your server details are auto-populated after server creation. But there are some details you will still need to input.
    - **Select Network:**
      Choose what network you need to setup for.
-     mainnet, integrationnet, testnet, (other options will be added in the future).
+     mainnet, integrationnet, testnet, dor-metagraph-mainnet, (other options will be added in the future).
    - **Node Username:**  
      Defaults to `nodeadmin` (change if needed, but make sure you document it).
    - **nodectl Version:**  
