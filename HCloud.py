@@ -337,6 +337,36 @@ class Tooltip:
             self.tooltip_window.destroy()
             self.tooltip_window = None
 
+def copy_paste_menu(widget):
+    context_menu = tk.Menu(
+        widget,
+        tearoff=False,
+        background="#333333",
+        foreground="white",
+        activebackground="#8B0000",
+        activeforeground="white",
+        bd=1,
+        relief="solid"
+    )
+
+    context_menu.add_command(
+        label="Cut",
+        command=lambda: widget.event_generate("<<Cut>>")
+    )
+    context_menu.add_command(
+        label="Copy",
+        command=lambda: widget.event_generate("<<Copy>>")
+    )
+    context_menu.add_command(
+        label="Paste",
+        command=lambda: widget.event_generate("<<Paste>>")
+    )
+
+    def show_menu(event):
+        context_menu.tk_popup(event.x_root, event.y_root)
+
+    widget.bind("<Button-3>", show_menu)
+
 def format_path(path):
     if os.name == 'nt':
         return os.path.normpath(path)
@@ -570,17 +600,14 @@ def fetch_server_details(api_key, server_name):
 def create_new_firewall_with_defaults(api_key, firewall_name):
     headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}
 
-    # Fetch the user's WAN IP
     wan_ip = get_wan_ip()
     if not wan_ip:
         messagebox.showerror(
             "Error",
             "Failed to fetch your WAN IP address. Cannot restrict SSH access to your Home IP."
         )
-        # Proceed with default rules
         source_ips_ssh = ["0.0.0.0/0", "::/0"]
     else:
-        # Show the user the WAN IP found
         message_text = (
             f"Your current WAN IP address is: {wan_ip}\n\n"
             "Do you want to restrict SSH access to this IP for extra security?"
@@ -589,7 +616,6 @@ def create_new_firewall_with_defaults(api_key, firewall_name):
 
         if add_home_ip:
             source_ips_ssh = [f"{wan_ip}/32" if ':' not in wan_ip else f"{wan_ip}/128"]
-            # Ask if they would like to manually add any other IPs
             add_more_ips = messagebox.askyesno(
                 "Additional IPs",
                 "Would you like to add any other IP addresses or CIDR ranges to allow SSH access from?"
@@ -742,6 +768,7 @@ def create_edit_firewall_window(api_key, firewall_details, firewall_dropdown):
     name_entry = tk.Entry(container, width=30, bg="white", fg="black", font=("Helvetica", 9))
     name_entry.insert(0, firewall_details.get('name', firewall_dropdown.get()))
     name_entry.pack(pady=(0, 10))
+    copy_paste_menu(name_entry)
     
     rules_container = tk.Frame(container, bg="#333333")
     rules_container.pack(expand=True, fill="both", padx=10, pady=10)
@@ -787,7 +814,8 @@ def create_edit_firewall_window(api_key, firewall_details, firewall_dropdown):
         add_details_entry = tk.Entry(row, width=20, textvariable=add_details_var,
                                      bg="white", fg="black", font=("Helvetica", 9))
         add_details_entry.grid(row=0, column=0, padx=5, sticky="w")
-        
+        copy_paste_menu(add_details_entry)
+
         if protocol == "ssh" and port_range == "22":
             ssh_var_dict[row] = add_details_var
             tk.Label(row, text="ssh", bg="#333333", fg="white", font=("Helvetica", 9),
@@ -809,6 +837,7 @@ def create_edit_firewall_window(api_key, firewall_details, firewall_dropdown):
             port_range_entry = tk.Entry(row, width=15, textvariable=port_range_var,
                                         bg="white", fg="black", font=("Helvetica", 9))
             port_range_entry.grid(row=0, column=2, padx=5, sticky="w")
+            copy_paste_menu(port_range_entry)
             if not (protocol == "ssh" and port_range == "22") and protocol != "icmp":
                 delete_button = ttk.Button(row, text="DELETE",
                                            command=lambda: row.destroy())
@@ -1786,6 +1815,8 @@ def install_nodectl_thread(api_key, server_name, ssh_key, log_queue, ssh_passphr
                 nprofile = "dag-l0"
             elif network == "integrationnet":
                 nprofile = "intnet-l0"
+            elif network == "dor-metagraph-mainnet":
+                nprofile = "dor-dl1"
             else:
                 nprofile = "error-l0"
 
@@ -2159,16 +2190,25 @@ def create_app_window(api_key):
         save_config(config_data)
 
         threads_to_ignore = {
-            'pydevd.Writer', 'pydevd.Reader', 'pydevd.CommandThread', 'pydevd.CheckAliveThread'
+            "pydevd.Writer",
+            "pydevd.Reader",
+            "pydevd.CommandThread",
+            "pydevd.CheckAliveThread",
+            "paramiko.transport"
         }
+
         for thread in threading.enumerate():
-            if thread.name not in threads_to_ignore and thread is not threading.main_thread():
-                logging.debug(f"Waiting for thread {thread.name} to finish.")
-                try:
-                    # Wait (no timeout) so the thread can clean up properly
-                    thread.join()
-                except RuntimeError as e:
-                    logging.debug(f"Skipping thread {thread.name}: {e}")
+            if thread is threading.main_thread():
+                continue
+            if any(ignore in thread.name for ignore in threads_to_ignore) or thread.name.startswith("Dummy-"):
+                logging.debug(f"Skipping thread {thread.name}")
+                continue
+
+            logging.debug(f"Waiting for thread {thread.name} to finish.")
+            try:
+                thread.join()
+            except RuntimeError as e:
+                logging.debug(f"Skipping thread {thread.name}: {e}")
 
         root.quit()
         root.destroy()
@@ -2219,6 +2259,7 @@ def create_app_window(api_key):
     Tooltip(server_name_entry, "Type the name for your new server.\n(No spaces or special characters).")
     server_name_entry.grid(row=0, column=1, padx=(100, 0), pady=10, sticky='w')
     server_name_entry.insert(0, config.get("server_name", ""))
+    copy_paste_menu(server_name_entry)
 
     ttk.Label(create_server_tab, text="Location:").grid(row=1, column=1, padx=5, pady=5, sticky='w')
     selected_location_var = tk.StringVar(value=config.get("location", ""))
@@ -2425,7 +2466,7 @@ def create_app_window(api_key):
     network_dropdown = ttk.Combobox(
         install_nodectl_tab, 
         textvariable=selected_network_var, 
-        values=["mainnet", "integrationnet", "testnet"], 
+        values=["mainnet", "integrationnet", "testnet", "dor-metagraph-mainnet"], 
         width=25
     )
     network_dropdown.grid(row=1, column=1, padx=(5, 10), pady=10, ipadx=5, sticky='ew')
@@ -2450,7 +2491,7 @@ def create_app_window(api_key):
         width=35
     )
     username_entry.grid(row=2, column=1, padx=(5, 10), pady=10, sticky='w')
-
+    copy_paste_menu(username_entry)
     install_nodectl_tab.grid_columnconfigure(0, weight=1)
     install_nodectl_tab.grid_columnconfigure(1, weight=1)
     install_nodectl_tab.grid_columnconfigure(2, weight=1)
@@ -2465,6 +2506,7 @@ def create_app_window(api_key):
         height=13 
     )
     status_text.grid(row=0, column=0, sticky='nsew')
+    copy_paste_menu(status_text)
 
     status_v_scrollbar = tk.Scrollbar(status_frame, orient='vertical', command=status_text.yview)
     status_v_scrollbar.grid(row=0, column=1, sticky='ns')
@@ -2701,6 +2743,7 @@ def prompt_api_key():
 
     api_key_entry = ttk.Entry(root, show="*")
     api_key_entry.grid(row=2, column=0, columnspan=2, pady=(5, 5), padx=(10, 10), sticky="ew")
+    copy_paste_menu(api_key_entry)
     api_key_entry.focus_set()
 
     Tooltip(api_key_entry, "Paste the 64-character Hetzner API Key that you created with 'Read/Write' permissions.")
