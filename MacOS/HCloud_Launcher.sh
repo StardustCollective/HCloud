@@ -136,7 +136,16 @@ if $INSTALL_PYTHON; then
       rm -f "$PKG_FILE"
       log "Python 3.13.2 installed successfully."
 
-      sys_python="$(command -v python3 || true)"
+      hash -r
+
+      if [ -x "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3" ]; then
+        sys_python="/Library/Frameworks/Python.framework/Versions/3.13/bin/python3"
+      else
+        sys_python="$(command -v python3 || true)"
+      fi
+
+      hash -r
+
       if python_version_ok "$sys_python"; then
         PY_CMD="$sys_python"
         echo "${GREEN}Python 3.13.2 is now installed.${RESET}"
@@ -145,6 +154,7 @@ if $INSTALL_PYTHON; then
         log "Python 3.13.2 post-install check failed."
         exit 1
       fi
+
       ;;
     * )
       echo
