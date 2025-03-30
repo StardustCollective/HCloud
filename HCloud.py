@@ -1565,18 +1565,42 @@ def start_install_nodectl(api_key, server_name, ssh_key, status_text, p12_file, 
     process_log_thread.start()
 
 def download_nodectl(client, nodectl_version, log_queue, distribution="ubuntu-22.04"):
-    if distribution == "ubuntu-24.04":
-        install_command = (
-            f'sudo nodectl auto_restart disable; '
-            f'wget -N https://github.com/stardustcollective/nodectl/releases/download/{nodectl_version}/nodectl_x86_64_2404 '
-            f'-P /usr/local/bin -O /usr/local/bin/nodectl && sudo chmod +x /usr/local/bin/nodectl'
-        )
+    # Determine OS version
+    try:
+        stdin, stdout, stderr = client.exec_command("lsb_release -rs || grep VERSION_ID /etc/os-release | cut -d '\"' -f 2")
+        distro_version = stdout.read().decode().strip()
+        log_queue.put(f"Detected remote OS version: {distro_version}\n")
+    except Exception as e:
+        log_queue.put(f"Failed to detect remote OS version: {e}\n")
+        return False
+
+    # Determine which nodectl binary to download
+    if distro_version.startswith("24.04"):
+        nodectl_binary = "nodectl_x86_64_2404"
     else:
-        install_command = (
-            f'sudo nodectl auto_restart disable; '
-            f'wget -N https://github.com/stardustcollective/nodectl/releases/download/{nodectl_version}/nodectl_x86_64 '
-            f'-P /usr/local/bin -O /usr/local/bin/nodectl && sudo chmod +x /usr/local/bin/nodectl'
-        )
+        nodectl_binary = "nodectl_x86_64"
+
+    log_queue.put(f"Downloading nodectl binary: {nodectl_binary} for Ubuntu {distro_version}\n")
+
+    # Download and install
+    install_command = (
+        f'sudo nodectl auto_restart disable; '
+        f'wget -N https://github.com/stardustcollective/nodectl/releases/download/{nodectl_version}/{nodectl_binary} '
+        f'-P /usr/local/bin -O /usr/local/bin/nodectl && sudo chmod +x /usr/local/bin/nodectl'
+    )
+    
+    # if distribution == "ubuntu-24.04":
+    #     install_command = (
+    #         f'sudo nodectl auto_restart disable; '
+    #         f'wget -N https://github.com/stardustcollective/nodectl/releases/download/{nodectl_version}/nodectl_x86_64_2404 '
+    #         f'-P /usr/local/bin -O /usr/local/bin/nodectl && sudo chmod +x /usr/local/bin/nodectl'
+    #     )
+    # else:
+    #     install_command = (
+    #         f'sudo nodectl auto_restart disable; '
+    #         f'wget -N https://github.com/stardustcollective/nodectl/releases/download/{nodectl_version}/nodectl_x86_64 '
+    #         f'-P /usr/local/bin -O /usr/local/bin/nodectl && sudo chmod +x /usr/local/bin/nodectl'
+    #     )
 
     max_retries = 3
     for attempt in range(max_retries):
