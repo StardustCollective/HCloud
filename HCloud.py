@@ -411,7 +411,7 @@ def save_server_info(server_name, server_ip, ssh_key_path, username, network):
     formatted_ssh_key_path = format_path(ssh_key_path)
 
     ssh_config_lines = [
-        f"### This ssh_config file can also be used to import this server's settings into Termius. ###",
+        "### This ssh_config file can also be used to import this server's settings into Termius. ###",
         "",
         f"Host {server_name}",
         f"    HostName {server_ip}",
@@ -419,23 +419,23 @@ def save_server_info(server_name, server_ip, ssh_key_path, username, network):
         f"    IdentityFile {formatted_ssh_key_path}",
         "    Port 22",
         "",
-    ]
-
-    ssh_command = f"ssh -i {formatted_ssh_key_path} {username}@{server_ip}"
-    sftp_command = f"sftp -i {formatted_ssh_key_path} {username}@{server_ip}"
-
-    ssh_config_lines.extend([
-        "",
         "# Commands to access the server:",
-        f"# {ssh_command}",
-        f"# {sftp_command}",
-    ])
+        f"# ssh -i {formatted_ssh_key_path} {username}@{server_ip}",
+        f"# sftp -i {formatted_ssh_key_path} {username}@{server_ip}",
+    ]
 
     with open(ssh_config_file_path, 'w') as f:
         f.write('\n'.join(ssh_config_lines))
 
-    if platform.system() == "Darwin":
-        # --- Create a duplicate (hard link if possible) in the user's .ssh folder ---
+    def is_linux_gui():
+        if platform.system() != "Linux":
+            return False
+        return bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+
+    system = platform.system()
+    should_link = system in ["Darwin", "Windows"] or is_linux_gui()
+
+    if should_link:
         user_ssh_dir = os.path.join(os.path.expanduser("~"), ".ssh")
         os.makedirs(user_ssh_dir, exist_ok=True)
         destination_path = os.path.join(user_ssh_dir, f"{server_name}_ssh_config.txt")
@@ -444,11 +444,12 @@ def save_server_info(server_name, server_ip, ssh_key_path, username, network):
             os.remove(destination_path)
 
         try:
-            # Attempt to create a hard link
             os.link(ssh_config_file_path, destination_path)
-        except Exception as e:
+            print(f"[INFO] Hard link created at: {destination_path}")
+        except Exception:
             shutil.copy2(ssh_config_file_path, destination_path)
-    
+            print(f"[INFO] Hard link failed — copied instead to: {destination_path}")
+
     return ssh_config_file_path
 
 def get_firewall_details(api_key, firewall_id):
