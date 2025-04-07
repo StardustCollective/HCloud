@@ -695,7 +695,7 @@ def get_wan_ip():
         messagebox.showerror("Error", f"Failed to fetch WAN IP: {e}")
         return None
 
-def secure_ssh_to_wan_ip():
+def secure_ssh_to_wan_ip(rules_frame):
     wan_ip = get_wan_ip()
     if not wan_ip:
         return
@@ -866,7 +866,7 @@ def create_edit_firewall_window(api_key, firewall_details, firewall_dropdown):
     ttk.Button(edit_window, text="ADD", style="DarkRed.TButton",
            command=lambda: add_rule_row()).pack()
     ttk.Button(edit_window, text="Secure Access to WAN IP", style="DarkRed.TButton",
-            command=secure_ssh_to_wan_ip).pack(pady=5)
+           command=lambda: secure_ssh_to_wan_ip(rules_frame)).pack(pady=5)
     ttk.Button(edit_window, text="Save", style="DarkRed.TButton", width=20,
             command=lambda: save_firewall(api_key, name_entry.get(), rules_frame,
                                             firewall_details.get('id'), firewall_dropdown, edit_window)
