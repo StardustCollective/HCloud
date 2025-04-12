@@ -1,8 +1,8 @@
 # HCloud - Hetzner Cloud Management GUI
+Now with support to build a DigitalOcean server too!
 
-This tool is currently in beta!  
-If you use it, please report any issues to `@Proph151Music`.  
-The script will be updated soon with improvements based on user feedback.
+If you use this, please report any issues to `@Proph151Music`.  
+The script will constantly get updated with improvements, based on user feedback.
 
 Don't forget to tip the bartender!
 
