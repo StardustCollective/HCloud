@@ -13,8 +13,13 @@ Don't forget to tip the bartender!
 
 Welcome to **HCloud**, a user-friendly GUI tool for managing your Hetzner Cloud infrastructure. Whether you're creating servers, setting up firewalls, managing SSH keys, or installing nodectl, HCloud streamlines these tasks so you don’t have to be a tech expert.
 
+## Update
+
+- The tool now has an option for building a cloud server on DigitalOcean as well!
+
 ## Key Features
 
+- **Platform Selection:** Choose which platform (Hetzner or DigitalOcean).
 - **Manage Servers:** Easily create, view, and delete servers.
 - **Firewall Management:** Quickly set up and edit firewall rules.
 - **SSH Key Management:** Import or create SSH keys for secure access.
@@ -31,7 +36,7 @@ Welcome to **HCloud**, a user-friendly GUI tool for managing your Hetzner Cloud 
     
 - [How to Use HCloud](#how-to-use-hcloud)
   - [Launch HCloud](#launch-hcloud)
-  - [Enter Your Hetzner API Key](#enter-your-hetzner-api-key)
+  - [Enter Your Platform API Key](#enter-your-platform-api-key)
   - [Create Server Tab](#create-server-tab)
   - [Install nodectl Tab](#install-nodectl-tab)
 - [Import Server Settings Into Termius (Optional)](#import-server-settings-into-termius-optional)
@@ -47,7 +52,7 @@ Welcome to **HCloud**, a user-friendly GUI tool for managing your Hetzner Cloud 
 **Download and Extract the HCloud_launcher.zip file**
 
 1. **Download the File:**
-   - [Right-click here and select "Save As"](https://github.com/StardustCollective/HCloud/raw/main/Windows/HCloud_Launcher.zip) to download the `HCloud_launcher.zip` file.
+   - [Right-click here and select "Save As"](https://github.com/StardustCollective/HCloud/raw/main/Windows/CloudLauncher.zip) to download the `Cloudlauncher.zip` file.
    - Save it to your desired location (e.g., `C:\Users\YourUsername\Downloads`).
 
 2. **Extract the File:**
@@ -55,7 +60,7 @@ Welcome to **HCloud**, a user-friendly GUI tool for managing your Hetzner Cloud 
    - Select your extraction folder and click "Extract".
 
 3. **Run the File:**
-   - Open the extracted folder and double-click `HCloud_launcher.bat` to run it.
+   - Open the extracted folder and double-click `Cloudlauncher.bat` to run it.
 
 ---
 
@@ -64,7 +69,7 @@ Welcome to **HCloud**, a user-friendly GUI tool for managing your Hetzner Cloud 
 Open **Terminal** and run:
 
 ```bash
-curl -L -O https://raw.githubusercontent.com/StardustCollective/HCloud/main/MacOS/HCloud_Launcher.sh && chmod +x HCloud_Launcher.sh && ./HCloud_Launcher.sh
+curl -L -O https://raw.githubusercontent.com/StardustCollective/HCloud/main/MacOS/CloudLauncher.sh && chmod +x CloudLauncher.sh && ./CloudLauncher.sh
 ```
 
 ---
@@ -93,7 +98,7 @@ wget https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py 
 
 ### Launch HCloud
 
-1. **Launch `HCloud_Launcher.bat` (Windows) or `HCloud_Launcher.sh` (MacOS):**
+1. **Launch `CloudLauncher.bat` (Windows) or `CloudLauncher.sh` (MacOS):**
    - Do you want to set up a local environment for HCloud?
      -----
      <img width="489" alt="image" src="https://github.com/user-attachments/assets/dcaee374-87e4-4332-ae90-52d5af9fabe4" />
@@ -108,12 +113,16 @@ wget https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py 
      
 -----
 
-2. #### Enter Your Hetzner API Key
-   - When prompted, paste your Hetzner Cloud API key.
+2. #### Enter Your Platform API Key
+   - When prompted, paste your Platform Cloud API key.
      -----
    ![Screenshot 2025-02-19 162320](https://github.com/user-attachments/assets/5624a3f6-5aa5-4dac-84a0-34426ffaf5fe)
 
      If you don’t have one, follow these steps:
+     The steps show how to perform it on Hetzner.
+   
+     For **DigitalOcean**, follow the steps in the link given on the API Key Input window.
+     Make sure the key you generate is given `Full Access`.
    
      -----
    **Creating a Hetzner API Key:**
@@ -136,7 +145,7 @@ wget https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py 
      
      -----
      
-3. **Manage Your Cloud Resources:**
+4. **Manage Your Cloud Resources:**
 
    ### Create Server Tab
 
