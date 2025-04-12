@@ -2883,8 +2883,8 @@ def prompt_api_key():
 
     style = ttk.Style()
     style.theme_use('clam')
-    style.configure("Custom.TButton", foreground="white", background="#8B0000", font=("Helvetica", 12, "bold"))
-    style.map("Custom.TButton", background=[("active", "#000000"), ("!active", "#8B0000")])
+    style.configure("Custom.TButton", foreground="white", background="#00008B", font=("Helvetica", 12, "bold"))
+    style.map("Custom.TButton", background=[("active", "#000000"), ("!active", "#00008B")])
 
     instructions_frame = tk.Frame(root, bg="#333333")
     instructions_frame.grid(row=0, column=0, columnspan=2, pady=(10, 5), padx=10, sticky="nsew")
