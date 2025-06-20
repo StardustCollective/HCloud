@@ -66,7 +66,11 @@ Welcome to **HCloud**, a user-friendly GUI tool for managing your Hetzner Cloud 
 
 ### MacOS
 
-Open **Terminal** and run:
+1. Install Python from the website:
+
+      * https://www.python.org/downloads/macos/
+
+3. Open **Terminal** and run:
 
 ```bash
 curl -L -O https://raw.githubusercontent.com/StardustCollective/HCloud/main/MacOS/CloudLauncher.sh && chmod +x CloudLauncher.sh && ./CloudLauncher.sh
