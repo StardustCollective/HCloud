@@ -130,7 +130,7 @@ wget https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py 
    
      -----
    **Creating a Hetzner API Key:**
-   - **Log in to Hetzner Cloud:**  
+   - **Log in to Hetzner Console:**  
      Visit the [Hetzner Cloud Console](https://console.hetzner.cloud) and sign in.
    - **Navigate to API Settings:**  
      Click **Security > API Tokens** in the left-hand menu.
