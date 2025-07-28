@@ -13,6 +13,7 @@ import webbrowser
 import shlex
 import csv
 import shutil
+import json
 
 root = None
 restart_required = False
@@ -992,7 +993,17 @@ def import_ssh(api_key, ssh_name, ssh_dropdown):
     if response.status_code == 201:
         messagebox.showinfo("Success", f"SSH Key '{ssh_name}' imported successfully.")
 
-        ssh_keys = fetch_ssh_keys(api_key)
+        response_data = response.json()
+        ssh_key = response_data.get('ssh_key')
+        ssh_key_id = ssh_key.get('id') if ssh_key else None
+
+        fallback_url = f"https://api.hetzner.cloud/v1/ssh_keys/{ssh_key_id}"
+        fallback_response = requests.get(fallback_url, headers=headers)
+        if fallback_response.status_code == 200:
+            logging.info(f"Confirmed SSH key by ID fallback: {ssh_key_id}")
+        else:
+            messagebox.showerror("Error", f"Failed to confirm SSH Key '{ssh_name}' was added to Hetzner (direct fetch failed).")
+            return
 
         ssh_dir = os.path.expanduser("~/.ssh")
         if os.path.exists(ssh_dir):
@@ -1001,7 +1012,6 @@ def import_ssh(api_key, ssh_name, ssh_dropdown):
         else:
             local_ssh_keys = []
 
-        ssh_names_on_hetzner = [ssh['name'] for ssh in ssh_keys]
         for local_key in local_ssh_keys:
             if local_key not in ssh_names_on_hetzner:
                 ssh_keys.append({'name': f"Local: {local_key}", 'local_only': True})
@@ -1075,16 +1085,38 @@ def create_ssh_key(api_key, ssh_key_name, passphrase, ssh_dropdown):
     
     try:
         response = requests.post(url, headers=headers, json=data)
+
+        # Debug log of raw response
+        try:
+            with open("debug_ssh_response.log", "a") as debug_log:
+                debug_log.write("\n==== Hetzner SSH Key Create Response ====\n")
+                debug_log.write(f"Request Data: {json.dumps(data)}\n")
+                debug_log.write(f"Status Code: {response.status_code}\n")
+                debug_log.write(f"Headers: {dict(response.headers)}\n")
+                debug_log.write(f"Raw Response: {response.text}\n")
+                debug_log.write("=========================================\n")
+        except Exception as e:
+            print(f"[ERROR] Failed to write debug log: {e}")
+
         response_data = response.json()
         
         if response.status_code == 201:
-            ssh_key_id = response_data.get('ssh_key', {}).get('id')
-            logging.info(f"SSH Key '{ssh_key_name}' created successfully with ID: {ssh_key_id}")
-            return ssh_key_id
-        else:
-            logging.error(f"Failed to create SSH key on Hetzner. Status Code: {response.status_code}. Response: {response_data}")
-            messagebox.showerror("Error", f"Failed to create SSH key on Hetzner. Response: {response_data}")
-            return None
+            ssh_key = response_data.get('ssh_key')
+            if ssh_key and 'id' in ssh_key:
+                ssh_key_id = ssh_key['id']
+                logging.info(f"SSH Key '{ssh_key_name}' created successfully with ID: {ssh_key_id}")
+
+                single_url = f"https://api.hetzner.cloud/v1/ssh_keys/{ssh_key_id}"
+                headers = {'Authorization': f'Bearer {api_key}'}
+                direct_response = requests.get(single_url, headers=headers)
+
+                if direct_response.status_code == 200:
+                    logging.info(f"Successfully confirmed SSH key by ID fallback: {ssh_key_id}")
+                    return direct_response.json().get('ssh_key')
+                else:
+                    logging.warning(f"SSH key with ID {ssh_key_id} not found via direct fetch. API bug?")
+                    messagebox.showwarning("Verification Failed", f"SSH key '{ssh_key_name}' was created but cannot be confirmed via API.")
+                    return None
     
     except requests.exceptions.RequestException as e:
         logging.error(f"Exception occurred while creating SSH key on Hetzner: {e}")
@@ -1158,9 +1190,13 @@ def remove_ip_from_known_hosts(server_ip):
 def create_server(api_key, server_name, server_type, image, location, firewall_id, selected_ssh_key_name, ssh_dropdown):
     headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}
 
+    ssh_key = None
     ssh_keys = fetch_ssh_keys(api_key)
 
-    ssh_key = next((key for key in ssh_keys if key['name'] == selected_ssh_key_name), None)
+    if isinstance(ssh_key, dict) and 'id' in ssh_key:
+        pass
+    else:
+        ssh_key = next((key for key in ssh_keys if key['name'] == selected_ssh_key_name), None)
 
     local_private_key_path = os.path.expanduser(f"~/.ssh/{selected_ssh_key_name}")
     local_public_key_path = f"{local_private_key_path}.pub"
@@ -1229,14 +1265,10 @@ def create_server(api_key, server_name, server_type, image, location, firewall_i
     elif not ssh_key and not ssh_private_key_exists:
         passphrase = simpledialog.askstring("Passphrase", f"Enter passphrase for the new SSH key '{selected_ssh_key_name}':", show='*')
         if passphrase is not None:
-            create_ssh_key(api_key, selected_ssh_key_name, passphrase, ssh_dropdown)
-            ssh_key = next((key for key in fetch_ssh_keys(api_key) if key['name'] == selected_ssh_key_name), None)
-            if not ssh_key:
+            ssh_key = create_ssh_key(api_key, selected_ssh_key_name, passphrase, ssh_dropdown)
+            if not ssh_key or 'id' not in ssh_key:
                 messagebox.showerror("Error", "Failed to create SSH key on Hetzner.")
                 return
-        else:
-            messagebox.showinfo("Operation Cancelled", "Server creation cancelled.")
-            return
         
     if not ssh_key:
         messagebox.showerror("Error", "SSH key is not available. Cannot proceed.")
