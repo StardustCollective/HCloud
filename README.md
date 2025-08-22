@@ -155,7 +155,7 @@ wget https://raw.githubusercontent.com/StardustCollective/HCloud/main/HCloud.py 
 
    <img width="611" alt="image" src="https://github.com/user-attachments/assets/7d75d9b0-38e0-4ca7-b947-a0edc8c8afb5" />
 
-     Enter a Server Name, select a Location, choose the Server Specs and the Distribution OS.  
+     Enter a Server Name (only letters, numbers or dashes. No soaces or special characters!), select a Location, choose the Server Specs and the Distribution OS.  
      HCloud auto-fills firewall and SSH key names if you leave them blank.
    
      -----
